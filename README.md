@@ -2,6 +2,8 @@
 
 The [docker-compose](./docker-compose.yml) it runs a simple RabbitMQ cluster with 3 nodes.
 
+Note: tested only on Linux OS.
+
 # Step to reproduce the issue
 
 1. Run `docker compose up`
