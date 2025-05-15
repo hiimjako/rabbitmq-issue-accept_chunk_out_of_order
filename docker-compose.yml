@@ -1,0 +1,89 @@
+services:
+  rabbitmq1:
+    image: rabbitmq:4.1.0-management-alpine
+    container_name: "rabbitmq1"
+    hostname: "rabbitmq1"
+    restart: always
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=SWQOKODSQALRPCLNMEQG
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbitmq_stream advertised_host rabbitmq1 -rabbit loopback_users "none"
+    volumes:
+      - ./rabbitmq/enabled_plugins.conf:/etc/rabbitmq/enabled_plugins
+    ports:
+      - 5672:5672
+      - 15672:15672
+      - 5552:5552
+    networks:
+      rabbitmq-cluster:
+        aliases:
+          - rabbitmq1
+
+  rabbitmq2:
+    image: rabbitmq:4.1.0-management-alpine
+    container_name: "rabbitmq2"
+    hostname: "rabbitmq2"
+    restart: always
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=SWQOKODSQALRPCLNMEQG
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbitmq_stream advertised_host rabbitmq2 -rabbit loopback_users "none"
+    volumes:
+      - ./rabbitmq/enabled_plugins.conf:/etc/rabbitmq/enabled_plugins
+    ports:
+      - 5673:5672
+      - 15673:15672
+      - 5553:5552
+    depends_on:
+      - rabbitmq1
+    command: >
+      sh -c "sleep 10 && 
+             rabbitmq-server &
+             sleep 20 &&
+             rabbitmqctl stop_app &&
+             rabbitmqctl reset &&
+             rabbitmqctl join_cluster rabbit@rabbitmq1 &&
+             rabbitmqctl start_app &&
+             tail -f /dev/null"
+    networks:
+      rabbitmq-cluster:
+        aliases:
+          - rabbitmq2
+
+  rabbitmq3:
+    image: rabbitmq:4.1.0-management-alpine
+    container_name: "rabbitmq3"
+    hostname: "rabbitmq3"
+    restart: always
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=SWQOKODSQALRPCLNMEQG
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbitmq_stream advertised_host rabbitmq3 -rabbit loopback_users "none"
+    volumes:
+      - ./rabbitmq/enabled_plugins.conf:/etc/rabbitmq/enabled_plugins
+    ports:
+      - 5674:5672
+      - 15674:15672
+      - 5554:5552
+    depends_on:
+      - rabbitmq1
+    command: >
+      sh -c "sleep 15 && 
+             rabbitmq-server &
+             sleep 25 &&
+             rabbitmqctl stop_app &&
+             rabbitmqctl reset &&
+             rabbitmqctl join_cluster rabbit@rabbitmq1 &&
+             rabbitmqctl start_app &&
+             tail -f /dev/null"
+    networks:
+      rabbitmq-cluster:
+        aliases:
+          - rabbitmq3
+
+networks:
+  rabbitmq-cluster:
+    name: rabbitmq-cluster
